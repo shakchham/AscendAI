@@ -1,0 +1,144 @@
+{
+  "info": {
+    "name": "Ascend AI Phase 1",
+    "_postman_id": "d7d7b7f2-0ef7-44f5-8d33-2e215ca4de01",
+    "description": "Phase 1 API collection for Ascend AI (Student MVP). Set bearer token from Supabase login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/health"
+      }
+    },
+    {
+      "name": "Auth Sync",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"role\": \"student\",\n  \"termsAccepted\": true\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/sync"
+      }
+    },
+    {
+      "name": "Me",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+        "url": "{{baseUrl}}/api/auth/me"
+      }
+    },
+    {
+      "name": "Legal Accept",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+        "url": "{{baseUrl}}/api/legal/accept"
+      }
+    },
+    {
+      "name": "Student Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+        "url": "{{baseUrl}}/api/student/dashboard"
+      }
+    },
+    {
+      "name": "Set Target",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"targetScore\": 7.5\n}" },
+        "url": "{{baseUrl}}/api/student/target"
+      }
+    },
+    {
+      "name": "University Recommendations",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+        "url": "{{baseUrl}}/api/student/recommendations"
+      }
+    },
+    {
+      "name": "IELTS Mock Questions",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }],
+        "url": "{{baseUrl}}/api/mock-tests/ielts"
+      }
+    },
+    {
+      "name": "Submit IELTS Attempt",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"answers\": {\n    \"q1\": \"He doesn't like tea.\",\n    \"q2\": \"Quick\"\n  }\n}"
+        },
+        "url": "{{baseUrl}}/api/mock-tests/ielts/submit"
+      }
+    },
+    {
+      "name": "Essay Analyze",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"content\": \"In recent years, more students choose to study abroad for better opportunities. This trend has both benefits and drawbacks. On one hand, students gain international exposure and language skills...\"\n}"
+        },
+        "url": "{{baseUrl}}/api/essays/analyze"
+      }
+    },
+    {
+      "name": "Payment Initiate (Dummy Esewa)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"amount\": 250,\n  \"paymentMethod\": \"esewa_placeholder\"\n}" },
+        "url": "{{baseUrl}}/api/payments/initiate"
+      }
+    },
+    {
+      "name": "Payment Verify (Dummy Esewa)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json", "type": "text" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"paymentId\": \"{{paymentId}}\",\n  \"success\": true\n}" },
+        "url": "{{baseUrl}}/api/payments/verify"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000" },
+    { "key": "token", "value": "" },
+    { "key": "paymentId", "value": "" }
+  ]
+}
