@@ -12,6 +12,7 @@ import { healthRouter } from "./routes/health";
 import { legalRouter } from "./routes/legal";
 import { mockTestRouter } from "./routes/mockTests";
 import { paymentRouter } from "./routes/payments";
+import { phase3Router } from "./routes/phase3";
 import { studentRouter } from "./routes/student";
 import { setSocketServer } from "./lib/socket";
 
@@ -58,6 +59,7 @@ app.use("/api/mock-tests", mockTestRouter);
 app.use("/api/essays", essayRouter);
 app.use("/api/payments", paymentRouter);
 app.use("/api/consultancy", consultancyRouter);
+app.use("/api/phase3", phase3Router);
 
 app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });

@@ -25,6 +25,24 @@ enum TaskStatus {
   completed
 }
 
+enum SubscriptionPlan {
+  monthly_1500
+  yearly_15000
+  consultancy_per_student_1000
+}
+
+enum DeletionStatus {
+  pending
+  completed
+  rejected
+}
+
+enum WebhookProvider {
+  esewa
+  khalti
+  stripe
+}
+
 model User {
   id              String      @id
   email           String?     @unique
@@ -38,6 +56,13 @@ model User {
   payments        Payment[]
   fromMessages    Message[]    @relation("from_messages")
   toMessages      Message[]    @relation("to_messages")
+  subscriptions   Subscription[]
+  apiKeys         ApiKey[]
+  auditLogs       AuditLog[]
+  deletionRequests DeletionRequest[]
+  speakingAttempts SpeakingAttempt[]
+  adaptiveAttempts AdaptiveAttempt[]
+  proctorEvents   ProctorEvent[]
 
   @@map("users")
 }
@@ -196,4 +221,118 @@ model ClassBooking {
   createdAt     DateTime @default(now()) @map("created_at")
 
   @@map("class_bookings")
+}
+
+model Subscription {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  user      User             @relation(fields: [userId], references: [id])
+  plan      SubscriptionPlan
+  amount    Float
+  status    PaymentStatus    @default(pending)
+  startAt   DateTime         @default(now()) @map("start_at")
+  endAt     DateTime?        @map("end_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  @@map("subscriptions")
+}
+
+model PaymentWebhookEvent {
+  id            String          @id @default(uuid())
+  provider      WebhookProvider
+  payload       Json
+  processed     Boolean         @default(false)
+  receivedAt    DateTime        @default(now()) @map("received_at")
+
+  @@map("payment_webhook_events")
+}
+
+model QuestionBank {
+  id            String   @id @default(uuid())
+  consultancyId String   @map("consultancy_id")
+  examType      String   @map("exam_type")
+  title         String
+  questions     Json
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("question_banks")
+}
+
+model ApiKey {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id])
+  keyHash    String   @map("key_hash")
+  label      String
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastUsedAt DateTime? @map("last_used_at")
+
+  @@map("api_keys")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  targetType String   @map("target_type")
+  targetId   String?  @map("target_id")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
+
+model DeletionRequest {
+  id           String         @id @default(uuid())
+  userId       String         @map("user_id")
+  user         User           @relation(fields: [userId], references: [id])
+  status       DeletionStatus @default(pending)
+  requestedAt  DateTime       @default(now()) @map("requested_at")
+  processBy    DateTime?      @map("process_by")
+  completedAt  DateTime?      @map("completed_at")
+
+  @@map("deletion_requests")
+}
+
+model AdaptiveAttempt {
+  id                 String   @id @default(uuid())
+  userId             String   @map("user_id")
+  user               User     @relation(fields: [userId], references: [id])
+  examType           String   @map("exam_type")
+  currentDifficulty  Int      @default(2) @map("current_difficulty")
+  questionIndex      Int      @default(0) @map("question_index")
+  score              Float    @default(0)
+  state              Json?
+  completed          Boolean  @default(false)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("adaptive_attempts")
+}
+
+model SpeakingAttempt {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  user           User     @relation(fields: [userId], references: [id])
+  transcript     String?
+  aiFeedback     String   @map("ai_feedback")
+  audioRef       String?  @map("audio_ref")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("speaking_attempts")
+}
+
+model ProctorEvent {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id])
+  attemptId  String?  @map("attempt_id")
+  eventType  String   @map("event_type")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("proctor_events")
 }

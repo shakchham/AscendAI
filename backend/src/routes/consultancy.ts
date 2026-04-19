@@ -14,7 +14,10 @@ import { validateBody } from "../middleware/validate";
 
 const profileSchema = z.object({
   name: z.string().min(2),
-  logoUrl: z.string().url().optional(),
+  logoUrl: z
+    .string()
+    .refine((v) => /^https?:\/\//.test(v) || /^data:image\/(png|jpeg|jpg|webp);base64,/.test(v), "Invalid logo URL")
+    .optional(),
   primaryColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/).optional(),
   customDomain: z.string().optional(),
   subscriptionPlan: z.string().optional(),
@@ -71,6 +74,12 @@ const bookingSchema = z.object({
   slotAt: z.string().datetime(),
 });
 
+const logoUploadSchema = z.object({
+  fileName: z.string().min(3),
+  mimeType: z.enum(["image/png", "image/jpeg", "image/jpg", "image/webp"]),
+  base64Data: z.string().min(32),
+});
+
 const ensureConsultancy = async (userId: string) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user?.consultancyId) return null;
@@ -118,6 +127,42 @@ consultancyRouter.put(
       data: { name, logoUrl, primaryColor, customDomain, subscriptionPlan },
     });
     return res.json({ consultancy });
+  },
+);
+
+consultancyRouter.post(
+  "/logo-upload",
+  requireRole("consultancy_admin", "super_admin"),
+  validateBody(logoUploadSchema),
+  async (req, res) => {
+    const user = await prisma.user.findUnique({ where: { id: req.authUser!.id } });
+    if (!user?.consultancyId) return res.status(404).json({ message: "Consultancy not linked" });
+
+    const { fileName, mimeType, base64Data } = req.body as z.infer<typeof logoUploadSchema>;
+    const bytes = Buffer.from(base64Data, "base64");
+    if (bytes.length > 10 * 1024 * 1024) {
+      return res.status(400).json({ message: "File exceeds 10MB limit" });
+    }
+
+    // ClamAV placeholder hook for malware scanning
+    const clamAvScanResult = "clean";
+    if (clamAvScanResult !== "clean") {
+      return res.status(400).json({ message: "File scan failed" });
+    }
+
+    const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const logoUrl = `data:${mimeType};base64,${base64Data}`;
+    await prisma.consultancy.update({
+      where: { id: user.consultancyId },
+      data: { logoUrl },
+    });
+
+    return res.json({
+      uploaded: true,
+      storage: "placeholder_data_url",
+      fileName: safeName,
+      logoUrl,
+    });
   },
 );
 
@@ -198,6 +243,10 @@ consultancyRouter.put(
     const body = req.body as Partial<z.infer<typeof studentSchema>>;
     const user = await prisma.user.findUnique({ where: { id: req.authUser!.id } });
     if (!user?.consultancyId) return res.status(404).json({ message: "Consultancy not linked" });
+    const existing = await prisma.user.findUnique({ where: { id }, select: { consultancyId: true, role: true } });
+    if (!existing || existing.role !== "student" || existing.consultancyId !== user.consultancyId) {
+      return res.status(403).json({ message: "Student does not belong to your consultancy" });
+    }
 
     const studentUser = await prisma.user.update({
       where: { id },
@@ -222,6 +271,12 @@ consultancyRouter.delete(
   requireRole("consultancy_admin", "super_admin"),
   async (req, res) => {
     const id = req.params.id;
+    const user = await prisma.user.findUnique({ where: { id: req.authUser!.id } });
+    if (!user?.consultancyId) return res.status(404).json({ message: "Consultancy not linked" });
+    const existing = await prisma.user.findUnique({ where: { id }, select: { consultancyId: true, role: true } });
+    if (!existing || existing.role !== "student" || existing.consultancyId !== user.consultancyId) {
+      return res.status(403).json({ message: "Student does not belong to your consultancy" });
+    }
     await prisma.student.deleteMany({ where: { userId: id } });
     await prisma.user.delete({ where: { id } });
     res.json({ deleted: true });
